@@ -6,37 +6,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { query, model } = req.body;
-  if (!query) return res.status(400).json({ error: 'No query provided' });
+  if (!query) return res.status(400).json({ error: 'No query' });
 
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY not set' });
+  if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY not set in Vercel env vars' });
 
-  const SYSTEM = [
-    'You are a science animation generator.',
-    'Return ONLY valid JSON with these exact fields, no markdown, no explanation:',
-    'title: string max 55 chars',
-    'animType: one of: particles, waves, orbit, flow, split, build, pulse, network, pendulum, spiral',
-    'primaryColor: hex color string like #00ffc8',
-    'secondaryColor: hex color string like #a259ff',
-    'scenes: array of exactly 4 scene name strings',
-    'narration: 3 paragraphs of text separated by [BREAK]. Total 130-170 words. Science documentary tone.',
-    'keyPoints: array of exactly 5 key concept strings',
-    'formula: most important equation as string, or empty string if none',
-    'funFact: one surprising or counterintuitive fact as string',
-    'particles: object with count as number and behavior as string',
-    '',
-    'Choose animType based on topic:',
-    'particles = atoms molecules quantum chemistry nuclear',
-    'waves = sound light wifi radio electromagnetic signal',
-    'orbit = planets electrons gravity solar system moon',
-    'flow = blood water electricity data osmosis current',
-    'split = cell division mitosis meiosis fission separation',
-    'build = DNA evolution growth construction assembly',
-    'pulse = heartbeat photosynthesis neural rhythm signals',
-    'network = internet blockchain neural network social web',
-    'pendulum = oscillation simple harmonic motion clock swing',
-    'spiral = galaxy DNA helix hurricane fractal tornado'
-  ].join('\n');
+  const SYSTEM = 'You are a science animation generator. Return ONLY a single-line JSON object (no newlines inside strings, no line breaks anywhere in the output). Use the literal text PARA to separate paragraphs in the narration field. Fields required: title (string, max 55 chars), animType (string, one of: particles waves orbit flow split build pulse network pendulum spiral), primaryColor (hex string), secondaryColor (hex string), scenes (array of 4 strings), narration (single string using PARA between paragraphs, 130-170 words total, documentary tone), keyPoints (array of 5 strings), formula (string or empty), funFact (string), particles (object with count number and behavior string). animType guide: particles=atoms/quantum/chemistry, waves=sound/light/wifi/radio, orbit=planets/electrons/gravity, flow=blood/data/electricity/osmosis, split=cell division/fission, build=DNA/growth/evolution, pulse=heartbeat/photosynthesis/signals, network=internet/blockchain/neural, pendulum=oscillation/SHM, spiral=galaxies/DNA/hurricanes.';
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -51,7 +26,7 @@ export default async function handler(req, res) {
         max_tokens: 1024,
         messages: [
           { role: 'system', content: SYSTEM },
-          { role: 'user', content: 'Explain this topic for an animated science explainer: ' + query }
+          { role: 'user', content: 'Topic: ' + query }
         ]
       })
     });
@@ -63,12 +38,25 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     let raw = data.choices[0].message.content.trim();
-    raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '').trim();
+
+    // Strip markdown fences
+    raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    // Remove all actual newlines and control characters inside the string
+    // but preserve escaped ones that are valid JSON
+    raw = raw.replace(/[\r\n\t]/g, ' ');
+
+    // Remove any control characters (ASCII 0-31 except space)
+    raw = raw.replace(/[\x00-\x1F\x7F]/g, ' ');
+
+    // Clean up multiple spaces
+    raw = raw.replace(/\s+/g, ' ').trim();
 
     const parsed = JSON.parse(raw);
 
+    // Convert PARA back to real newlines in narration
     if (parsed.narration) {
-      parsed.narration = parsed.narration.replace(/\[BREAK\]/g, '\n\n');
+      parsed.narration = parsed.narration.replace(/PARA/g, '\n\n');
     }
 
     return res.status(200).json({ success: true, data: parsed });
