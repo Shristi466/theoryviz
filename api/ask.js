@@ -83,8 +83,8 @@ Return exactly this JSON (compact, no newlines between fields):
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        max_tokens: 1400,
-        temperature: 0.78,
+        max_tokens: 2000,
+        temperature: 0.72,
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user', content: `Create a full 5-scene TheoryViz story for: "${query}"` }
@@ -106,18 +106,32 @@ Return exactly this JSON (compact, no newlines between fields):
     if (start === -1 || end === -1) throw new Error('No JSON found in response');
     
     let data;
+    const rawJson = raw.slice(start, end + 1);
     try {
-      data = JSON.parse(raw.slice(start, end + 1));
+      data = JSON.parse(rawJson);
     } catch(parseErr) {
-      // Try aggressive cleanup
-      let cleaned = raw.slice(start, end + 1)
+      // Try progressive cleanup
+      let cleaned = rawJson
         .replace(/,\s*}/g, '}')
-        .replace(/,\s*]/g, ']');
-      data = JSON.parse(cleaned);
+        .replace(/,\s*]/g, ']')
+        .replace(/([^\\])"\s*\n\s*"/g, '$1" "') // join broken strings
+        .replace(/\\'/g, "'");                     // fix escaped apostrophes
+      try {
+        data = JSON.parse(cleaned);
+      } catch(e2) {
+        // Last resort: extract whatever scenes we can
+        console.error('JSON parse failed, raw snippet:', rawJson.slice(0, 400));
+        throw new Error('AI response was malformed — please try again');
+      }
+    }
+
+    // Validate minimum required fields
+    if (!data.scene1 || !data.scene2) {
+      throw new Error('Incomplete story generated — please try again');
     }
 
     return res.status(200).json({ data });
   } catch (e) {
-    return res.status(500).json({ error: e.message || 'Failed to generate story' });
+    console.error('Story gen error:', e.message, 'Raw:', raw?.slice(0,300)); return res.status(500).json({ error: e.message || 'Failed to generate story' });
   }
 }
