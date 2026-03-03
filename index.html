@@ -507,7 +507,8 @@ const THEMES=[
 
 // ══ STATE ══
 let storyData=null,curScene=0,vidPaused=false,speaking=false;
-let timerRAF=null,vidStart=null;
+let timerRAF=null;
+let sceneStartTs=null,sceneElapsed=0,totalElapsed=0;
 let mediaRec=null,recChunks=[],recordedBlob=null;
 let recCv=null,recCtx=null;
 let suggTimer=null,quizAnswered=false;
@@ -515,7 +516,16 @@ const MODEL='llama-3.3-70b-versatile';
 const VIDEO_DUR=30000,SCENE_DUR=6000;
 
 // ══ INPUT ══
-function quick(el){document.getElementById('inp').value=el.textContent.replace(/^[^\w]+/,'').trim();hideSugg();run();}
+function quick(el){
+  const raw=(el.textContent||'').trim();
+  // Bulletproof: split on spaces, drop tokens that are pure emoji/symbols, join the rest
+  const words=raw.split(/\s+/);
+  const textWords=words.filter(w=>/[a-zA-Z0-9]/.test(w));
+  const clean=textWords.length ? textWords.join(' ') : raw;
+  document.getElementById('inp').value=clean;
+  hideSugg();
+  run();
+}
 const inp=document.getElementById('inp');
 inp.addEventListener('keydown',e=>{if(e.key==='Enter'){hideSugg();run();}if(e.key==='Escape')hideSugg();});
 inp.addEventListener('input',()=>{
@@ -590,7 +600,13 @@ function buildVideo(q,d){
     Array.from({length:5},(_,i)=>`<div class="sdotr${i===0?' active':''}" id="sdr${i}" onclick="jumpScene(${i})"></div>`).join('');
 
   openModal();
-  setTimeout(()=>{renderScene(0);startTimer();startRecording();loadQR();},80);
+  setTimeout(()=>{
+    renderScene(0);
+    startTimer();
+    startRecording();
+    loadQR();
+    if(narrateEnabled) speakScene(0, ()=>advanceScene());
+  },200);
 }
 
 // ══ SCENE RENDERER ══
@@ -632,7 +648,7 @@ function renderScene(i){
     sc.querySelectorAll('.ex-chip').forEach((el,idx)=>{setTimeout(()=>el.classList.add('in'),380+idx*90);});
   }));
 
-  if(speaking){window.speechSynthesis.cancel();speaking=false;setNarrIdle();}
+  if(speaking&&!narrateEnabled){window.speechSynthesis.cancel();speaking=false;setNarrIdle();}
 }
 
 function buildErrorSlide(i,e){
@@ -753,31 +769,76 @@ function answerQuiz(selected,correct){
   }
 }
 
-// ══ TIMER ══
-function startTimer(){stopTimer();vidStart=null;timerRAF=requestAnimationFrame(timerTick);}
+// ══ TIMER + NARRATION-DRIVEN PLAYBACK ══
+// When narrating: narration finishes each scene THEN slides advance.
+// When not narrating: timer advances slides every SCENE_DUR ms.
+// Either way the progress bar and clock always update smoothly.
+
+
+function startTimer(){
+  stopTimer();
+  sceneStartTs=null;sceneElapsed=0;totalElapsed=curScene*SCENE_DUR;
+  timerRAF=requestAnimationFrame(timerTick);
+}
 function stopTimer(){if(timerRAF){cancelAnimationFrame(timerRAF);timerRAF=null;}}
-function restartVideo(){curScene=0;vidPaused=false;document.getElementById('pauseBtn').textContent='⏸';renderScene(0);startTimer();}
+
+function restartVideo(){
+  window.speechSynthesis.cancel();speaking=false;
+  curScene=0;vidPaused=false;quizAnswered=false;
+  document.getElementById('pauseBtn').textContent='⏸';
+  document.getElementById('sLabel').textContent='PLAYING';
+  document.getElementById('recDot').classList.add('on');
+  renderScene(0);
+  if(narrateEnabled) speakScene(0, ()=>advanceScene());
+  startTimer();
+}
 
 function timerTick(ts){
-  if(!vidStart)vidStart=ts;
-  if(vidPaused){timerRAF=requestAnimationFrame(timerTick);return;}
-  const totalEl=ts-vidStart;
-  const totalProg=Math.min(totalEl/VIDEO_DUR,1);
-  const newScene=Math.min(Math.floor(totalEl/SCENE_DUR),4);
-  const sceneEl=totalEl-newScene*SCENE_DUR;
-  const sceneProg=Math.min(sceneEl/SCENE_DUR,1);
-  const secs=Math.min(Math.floor(totalEl/1000),30);
+  if(!sceneStartTs) sceneStartTs=ts;
+  if(vidPaused){sceneStartTs=ts-sceneElapsed;timerRAF=requestAnimationFrame(timerTick);return;}
+
+  sceneElapsed=ts-sceneStartTs;
+  totalElapsed=curScene*SCENE_DUR+Math.min(sceneElapsed,SCENE_DUR);
+  const totalProg=Math.min(totalElapsed/VIDEO_DUR,1);
+
+  // clock
+  const secs=Math.min(Math.floor(totalElapsed/1000),30);
   document.getElementById('sTime').textContent=`0:${String(secs).padStart(2,'0')} / 0:30`;
+
+  // progress bar: fills across entire video
   document.getElementById('vpFill').style.width=(totalProg*100)+'%';
-  if(newScene!==curScene){curScene=newScene;renderScene(curScene);}
-  if(totalProg<1){timerRAF=requestAnimationFrame(timerTick);}
-  else{
-    document.getElementById('sLabel').textContent='COMPLETE ✓';
-    document.getElementById('recDot').classList.remove('on');
-    document.getElementById('liveDot').style.display='none';
-    document.getElementById('pauseBtn').textContent='▶';
-    stopRecording();
+
+  // Auto-advance by timer ONLY when narration is OFF
+  if(!narrateEnabled && sceneElapsed>=SCENE_DUR){
+    if(curScene<4){
+      advanceScene();
+    } else {
+      onVideoComplete();
+      return;
+    }
   }
+
+  if(totalProg<1){timerRAF=requestAnimationFrame(timerTick);}
+  else{ onVideoComplete(); }
+}
+
+function advanceScene(){
+  if(curScene>=4){onVideoComplete();return;}
+  curScene++;
+  quizAnswered=false;
+  sceneStartTs=null;sceneElapsed=0;
+  renderScene(curScene);
+  if(narrateEnabled) speakScene(curScene, ()=>{if(curScene<4)advanceScene();else onVideoComplete();});
+}
+
+function onVideoComplete(){
+  stopTimer();stopRecording();
+  document.getElementById('sLabel').textContent='COMPLETE ✓';
+  document.getElementById('recDot').classList.remove('on');
+  document.getElementById('liveDot').style.display='none';
+  document.getElementById('pauseBtn').textContent='▶';
+  document.getElementById('vpFill').style.width='100%';
+  document.getElementById('sTime').textContent='0:30 / 0:30';
 }
 
 function togglePause(){
@@ -785,13 +846,22 @@ function togglePause(){
   document.getElementById('pauseBtn').textContent=vidPaused?'▶':'⏸';
   document.getElementById('sLabel').textContent=vidPaused?'PAUSED':'PLAYING';
   document.getElementById('recDot').classList[vidPaused?'remove':'add']('on');
-  if(!vidPaused&&!timerRAF)timerRAF=requestAnimationFrame(timerTick);
+  if(vidPaused){
+    window.speechSynthesis.pause();
+  } else {
+    window.speechSynthesis.resume();
+    if(!timerRAF) timerRAF=requestAnimationFrame(timerTick);
+  }
 }
+
 function jumpScene(i){
+  window.speechSynthesis.cancel();speaking=false;
   curScene=i;quizAnswered=false;
-  if(vidStart)vidStart=performance.now()-i*SCENE_DUR;
+  sceneStartTs=null;sceneElapsed=0;
+  totalElapsed=i*SCENE_DUR;
   renderScene(i);
-  if(!timerRAF)timerRAF=requestAnimationFrame(timerTick);
+  if(narrateEnabled) speakScene(i, ()=>{if(i<4)advanceScene();else onVideoComplete();});
+  if(!timerRAF) timerRAF=requestAnimationFrame(timerTick);
 }
 
 // ══ RECORDING ══
@@ -857,22 +927,154 @@ function loadQR(){
 }
 
 // ══ NARRATOR ══
-function toggleNarrate(){
-  if(speaking){window.speechSynthesis.cancel();speaking=false;setNarrIdle();return;}
+let narrateEnabled=false; // auto-narrate mode
+let bestVoice=null;
+
+// Pick the calmest voice available — prefer female English voices
+function pickVoice(){
+  const voices=window.speechSynthesis.getVoices();
+  if(!voices.length)return null;
+  const preferred=[
+    'Samantha','Karen','Moira','Tessa','Fiona',   // macOS calm females
+    'Google UK English Female',                    // Chrome female
+    'Microsoft Zira','Microsoft Aria',             // Windows calm
+    'Google US English','en-US-Wavenet-F',
+  ];
+  for(const name of preferred){
+    const v=voices.find(x=>x.name.includes(name));
+    if(v)return v;
+  }
+  // Fallback: any English female
+  const female=voices.find(v=>v.lang.startsWith('en')&&/female|woman|girl|zira|samantha|karen|aria|moira/i.test(v.name));
+  if(female)return female;
+  // Fallback: any English
+  return voices.find(v=>v.lang.startsWith('en'))||voices[0]||null;
+}
+
+// Build the full narration script for a given scene
+function buildNarrationScript(sceneIdx){
+  if(!storyData)return '';
   const scKeys=['scene1','scene2','scene3','scene4','scene5'];
-  const sd=(storyData&&storyData[scKeys[curScene]])||{};
-  const txtParts=[
-    sd.question,sd.situation,sd.insight,sd.visual,sd.analogy,
-    sd.friendlyFormula,sd.revelation,sd.challenge
-  ].filter(Boolean);
-  const txt=txtParts.slice(0,3).join('. ');
+  const sd=storyData[scKeys[sceneIdx]]||{};
+  const labels=[
+    'Scene one. The Hook.',
+    'Scene two. Breaking it down.',
+    'Scene three. The hidden concept.',
+    'Scene four. The rule made simple.',
+    'Scene five. The mind-blowing insight.',
+  ];
+  const label=labels[sceneIdx]||'';
+
+  let parts=[label];
+  switch(sceneIdx){
+    case 0:
+      if(sd.question)parts.push(sd.question);
+      if(sd.situation)parts.push(sd.situation);
+      if(sd.revealText)parts.push('Here is the reveal. '+sd.revealText);
+      break;
+    case 1:
+      if(sd.title)parts.push(sd.title);
+      (sd.steps||[]).forEach((s,i)=>parts.push(`Step ${i+1}. ${s}`));
+      if(sd.insight)parts.push('Key insight. '+sd.insight);
+      break;
+    case 2:
+      if(sd.title)parts.push(sd.title);
+      if(sd.concept)parts.push('The concept is called: '+sd.concept);
+      if(sd.visual)parts.push(sd.visual);
+      if(sd.analogy)parts.push('Think of it like this. '+sd.analogy);
+      break;
+    case 3:
+      if(sd.rawFormula)parts.push('The formula is: '+sd.rawFormula);
+      if(sd.friendlyFormula)parts.push('In plain words, '+sd.friendlyFormula);
+      (sd.comparison||[]).forEach(c=>parts.push(c));
+      if(sd.quiz&&sd.quiz.question)parts.push('Quick question. '+sd.quiz.question);
+      break;
+    case 4:
+      if(sd.revelation)parts.push(sd.revelation);
+      (sd.examples||[]).forEach(e=>parts.push(e));
+      if(sd.challenge)parts.push('Your challenge for today. '+sd.challenge);
+      break;
+  }
+  return parts.filter(Boolean).join(' ');
+}
+
+function speakScene(sceneIdx, onFinished){
+  window.speechSynthesis.cancel();
+  const txt=buildNarrationScript(sceneIdx);
+  if(!txt){onFinished&&onFinished();return;}
+
+  // If this scene isn't already showing, show it now
+  if(sceneIdx!==curScene){
+    curScene=sceneIdx;
+    quizAnswered=false;
+    sceneStartTs=null;sceneElapsed=0;
+    renderScene(sceneIdx);
+  }
+
   const u=new SpeechSynthesisUtterance(txt);
-  u.rate=.92;u.pitch=1.05;
-  u.onstart=()=>{speaking=true;document.getElementById('narrPill').classList.add('on');};
-  u.onend=u.onerror=()=>{speaking=false;setNarrIdle();};
+  if(!bestVoice)bestVoice=pickVoice();
+  if(bestVoice)u.voice=bestVoice;
+  u.rate=0.82;
+  u.pitch=0.9;
+  u.volume=1;
+  u.lang='en-US';
+
+  u.onstart=()=>{
+    speaking=true;
+    document.getElementById('narrPill').classList.add('on');
+  };
+  u.onend=()=>{
+    speaking=false;
+    if(!narrateEnabled) document.getElementById('narrPill').classList.remove('on');
+    onFinished&&onFinished();
+  };
+  u.onerror=(e)=>{
+    // 'interrupted' is expected when we cancel manually — don't fire onFinished
+    speaking=false;
+    if(!narrateEnabled) document.getElementById('narrPill').classList.remove('on');
+    if(e.error!=='interrupted') onFinished&&onFinished();
+  };
   window.speechSynthesis.speak(u);
 }
-function setNarrIdle(){document.getElementById('narrPill').classList.remove('on');}
+
+// Toggle button: start/stop auto-narrate mode
+function toggleNarrate(){
+  if(narrateEnabled){
+    // Turn OFF
+    narrateEnabled=false;
+    window.speechSynthesis.cancel();
+    speaking=false;
+    document.getElementById('narrPill').classList.remove('on');
+  } else {
+    // Turn ON — speak current scene, then chain
+    narrateEnabled=true;
+    function chainFrom(i){
+      speakScene(i, ()=>{
+        if(!narrateEnabled)return;
+        if(i<4) chainFrom(i+1);
+        else onVideoComplete();
+      });
+    }
+    chainFrom(curScene);
+  }
+}
+
+function setNarrIdle(){
+  if(!narrateEnabled)document.getElementById('narrPill').classList.remove('on');
+}
+
+// Called automatically when scene changes — continues narrating if enabled
+function narrateIfEnabled(sceneIdx){
+  if(!narrateEnabled)return;
+  speakScene(sceneIdx);
+}
+
+// Load voices async (Chrome needs this)
+if(window.speechSynthesis){
+  window.speechSynthesis.onvoiceschanged=()=>{bestVoice=pickVoice();};
+  // trigger initial load
+  window.speechSynthesis.getVoices();
+}
 
 // ══ MODAL ══
 function openModal(){document.getElementById('videoOverlay').classList.add('on');}
