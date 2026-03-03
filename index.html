@@ -76,89 +76,123 @@ header{position:sticky;top:0;z-index:100;background:rgba(238,240,248,.94);backdr
 @media(max-width:520px){.home-qr-card{flex-direction:column;text-align:center;}.home-qr-sub{max-width:100%;}.home-qr-badges{justify-content:center;}}
 
 /* ══════════════════════════════════════
-   VIDEO MODAL
+   KINETIX-STYLE SIDE PANEL MODAL
 ══════════════════════════════════════ */
-#videoOverlay{display:none;position:fixed;inset:0;background:rgba(10,10,30,.8);backdrop-filter:blur(10px);z-index:900;align-items:center;justify-content:center;padding:16px;}
+#videoOverlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  z-index:900;align-items:center;justify-content:flex-end;
+}
 #videoOverlay.on{display:flex;}
 
 #videoModal{
-  background:var(--white);border:3px solid var(--dark);border-radius:28px;
-  box-shadow:10px 10px 0 var(--dark);width:100%;max-width:920px;
+  width:400px;max-width:100vw;height:100vh;
   display:flex;flex-direction:column;overflow:hidden;
-  animation:modalPop .4s cubic-bezier(.34,1.4,.64,1);
-  max-height:94vh;
+  animation:panelSlideIn .4s cubic-bezier(.22,1,.36,1);
+  position:relative;
 }
-@keyframes modalPop{from{transform:scale(.85) translateY(24px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+@keyframes panelSlideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
 
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:2px solid var(--border);background:var(--bg);flex-shrink:0;}
-.modal-topic{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--dark);display:flex;align-items:center;gap:8px;}
-.live-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:liveblink 1s ease-in-out infinite;}
-@keyframes liveblink{0%,100%{opacity:1;}50%{opacity:.2;}}
-.modal-close{background:var(--bg);border:2px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:10px;cursor:pointer;font-size:1rem;transition:all .2s;display:flex;align-items:center;justify-content:center;font-weight:700;}
-.modal-close:hover{border-color:var(--accent);color:var(--accent);}
+/* ── TOP BAR (inside panel) ── */
+.modal-header{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;z-index:30;
+}
+.modal-topic{
+  display:flex;align-items:center;gap:8px;
+  font-family:'Fredoka One',cursive;font-size:.95rem;color:#fff;
+  background:rgba(0,0,0,.25);backdrop-filter:blur(8px);
+  border-radius:20px;padding:5px 14px;border:1px solid rgba(255,255,255,.2);
+}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:liveblink 1s ease-in-out infinite;flex-shrink:0;}
+@keyframes liveblink{0%,100%{opacity:1;}50%{opacity:.25;}}
+.modal-close{
+  background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
+  border:1.5px solid rgba(255,255,255,.25);color:#fff;
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  font-size:1rem;transition:all .2s;display:flex;align-items:center;justify-content:center;font-weight:700;
+}
+.modal-close:hover{background:rgba(255,255,255,.2);}
 
-.vid-prog{height:5px;background:var(--border);flex-shrink:0;}
-.vid-prog-fill{height:100%;width:0%;transition:width .1s linear;border-radius:0 3px 3px 0;}
+/* ── PROGRESS BAR (top of panel) ── */
+.vid-prog{
+  position:absolute;top:0;left:0;right:0;height:4px;
+  background:rgba(255,255,255,.2);z-index:40;
+}
+.vid-prog-fill{height:100%;width:0%;transition:width .1s linear;background:#fff;border-radius:0 3px 3px 0;}
 
-.modal-body{display:flex;flex:1;overflow:hidden;min-height:500px;}
+.modal-body{display:flex;flex:1;overflow:hidden;height:100%;}
 
-/* ── SLIDE AREA ── */
-.slide-col{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;transition:background .7s ease;}
+/* ── SLIDE AREA (full panel) ── */
+.slide-col{
+  flex:1;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:background .8s cubic-bezier(.4,0,.2,1);
+}
 
-/* Scene dots overlay */
-.scene-dot-row{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:20;}
-.sdot{width:18px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);cursor:pointer;transition:all .3s;}
-.sdot.active{background:#fff;width:26px;}
-.sdot.done{background:rgba(255,255,255,.6);}
+/* Scene dots overlay - top progress pills */
+.scene-dot-row{
+  position:absolute;top:60px;left:50%;transform:translateX(-50%);
+  display:flex;gap:5px;z-index:25;
+}
+.sdot{
+  width:28px;height:4px;border-radius:3px;
+  background:rgba(255,255,255,.3);cursor:pointer;transition:all .4s cubic-bezier(.4,0,.2,1);
+}
+.sdot.active{background:rgba(255,255,255,.95);width:36px;}
+.sdot.done{background:rgba(255,255,255,.65);}
 
 /* BG particles */
 .particle{position:absolute;border-radius:50%;pointer-events:none;animation:pfloat linear infinite;}
-@keyframes pfloat{0%{transform:translateY(0) scale(1);opacity:.2;}50%{opacity:.35;}100%{transform:translateY(-60px) scale(.7);opacity:0;}}
+@keyframes pfloat{0%{transform:translateY(0) scale(1);opacity:.15;}50%{opacity:.28;}100%{transform:translateY(-80px) scale(.6);opacity:0;}}
 
-/* ═══ SCENE LAYOUTS ═══ */
+/* ═══ KINETIX SCENE LAYOUT ═══ */
 .scene{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:28px 24px;text-align:center;color:#fff;position:relative;z-index:2;
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:80px 28px 120px;
+  text-align:center;color:#fff;position:relative;z-index:2;
+  justify-content:center;
 }
 
-/* title on every scene */
+/* title on every scene - Kinetix bold */
 .sc-title{
   font-family:'Fredoka One',cursive;
-  font-size:clamp(1.4rem,3vw,2.1rem);
+  font-size:clamp(1.6rem,4vw,2.4rem);
   line-height:1.2;
-  text-shadow:0 2px 20px rgba(0,0,0,.3);
+  text-shadow:0 2px 24px rgba(0,0,0,.25);
   margin-bottom:0;
-  opacity:0;transform:translateY(-18px);
+  opacity:0;transform:translateY(-20px);
   transition:opacity .5s ease .1s, transform .5s ease .1s;
 }
 .sc-title.in{opacity:1;transform:translateY(0);}
 
-/* icon circle */
+/* icon circle - Kinetix large centered circle */
 .sc-icon{
-  width:130px;height:130px;border-radius:50%;
-  background:rgba(255,255,255,.12);
-  border:1.5px solid rgba(255,255,255,.25);
+  width:150px;height:150px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  border:2px solid rgba(255,255,255,.3);
   display:flex;align-items:center;justify-content:center;
-  font-size:3.6rem;
-  box-shadow:0 0 60px rgba(255,255,255,.12),0 8px 32px rgba(0,0,0,.3);
-  margin:20px 0;
-  opacity:0;transform:scale(.45) rotate(-12deg);
-  transition:opacity .55s cubic-bezier(.34,1.56,.64,1) .28s,transform .55s cubic-bezier(.34,1.56,.64,1) .28s;
+  font-size:4rem;
+  box-shadow:0 0 80px rgba(255,255,255,.15),0 12px 40px rgba(0,0,0,.25);
+  margin:24px 0 28px;
+  opacity:0;transform:scale(.4) rotate(-15deg);
+  transition:opacity .6s cubic-bezier(.34,1.56,.64,1) .25s,transform .6s cubic-bezier(.34,1.56,.64,1) .25s;
   animation:none;
 }
 .sc-icon.in{opacity:1;transform:scale(1) rotate(0);animation:iconFloat 5s ease-in-out 1s infinite;}
-@keyframes iconFloat{0%,100%{transform:scale(1) rotate(0) translateY(0);}50%{transform:scale(1.04) rotate(2deg) translateY(-6px);}}
+@keyframes iconFloat{0%,100%{transform:scale(1) translateY(0);}50%{transform:scale(1.04) translateY(-8px);}}
 
-/* glass card */
+/* Kinetix-style dark narration text card */
 .glass-card{
-  background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.15);
-  border-radius:20px;padding:16px 22px;backdrop-filter:blur(12px);
-  max-width:400px;width:100%;
-  opacity:0;transform:translateY(18px);
+  background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);
+  border-radius:22px;padding:20px 24px;backdrop-filter:blur(16px);
+  max-width:340px;width:100%;
+  opacity:0;transform:translateY(20px);
   transition:opacity .5s ease .5s,transform .5s ease .5s;
 }
 .glass-card.in{opacity:1;transform:translateY(0);}
-.glass-card p{font-family:'Nunito',sans-serif;font-size:clamp(.95rem,2vw,1.1rem);font-weight:700;line-height:1.7;color:rgba(255,255,255,.92);}
+.glass-card p{font-family:'Nunito',sans-serif;font-size:clamp(1rem,2.2vw,1.15rem);font-weight:700;line-height:1.7;color:rgba(255,255,255,.95);}
 
 /* ── SCENE 1: HOOK ── */
 .hook-q{
@@ -295,35 +329,83 @@ header{position:sticky;top:0;z-index:100;background:rgba(238,240,248,.94);backdr
 }
 .challenge-box.in{opacity:1;transform:translateY(0);}
 
-/* ── RIGHT PANEL ── */
-.info-col{width:248px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid var(--border);background:var(--bg);overflow-y:auto;}
-.info-section{padding:14px 16px;border-bottom:2px solid var(--border);}
-.info-label{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
-.scene-dots-r{display:flex;gap:5px;flex-wrap:wrap;}
-.sdotr{width:18px;height:5px;border-radius:3px;background:var(--border);transition:all .3s;cursor:pointer;}
-.sdotr.active{background:var(--blue);width:26px;}
-.sdotr.done{background:var(--green);}
+/* ── KINETIX AI NARRATOR BOTTOM BAR ── */
+.info-col{display:none;} /* hide old right panel */
 
-.status-row2{display:flex;align-items:center;justify-content:space-between;}
-.s-time{font-family:'Space Mono',monospace;font-size:.78rem;color:var(--blue);font-weight:700;}
-.s-label{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-.rec-wrap{display:flex;align-items:center;gap:5px;}
-.rec-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:none;flex-shrink:0;}
-.rec-dot.on{display:block;animation:recpulse .8s ease-in-out infinite;}
-@keyframes recpulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+.kx-bottom{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:18px 20px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:30;
+  background:linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 100%);
+}
 
-.ctrl-row2{display:flex;gap:7px;align-items:center;}
-.icon-btn2{width:38px;height:38px;border-radius:50%;background:var(--white);border:2px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s;flex-shrink:0;}
-.icon-btn2:hover{border-color:var(--blue);color:var(--blue);}
-.narr-pill{flex:1;height:38px;background:var(--dark);color:#fff;border:2px solid var(--dark);border-radius:20px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;font-weight:700;}
-.narr-pill:hover{background:#2d2d5e;}
-.narr-pill.on{background:var(--accent);border-color:var(--accent);}
-.nbars{display:flex;gap:2px;align-items:flex-end;height:12px;}
-.nb{width:2.5px;background:#fff;border-radius:2px;}
-.nb1,.nb5{height:4px;}.nb2,.nb4{height:8px;}.nb3{height:11px;}
-.narr-pill.on .nb{animation:nba .4s ease-in-out infinite alternate;}
-.narr-pill.on .nb2{animation-delay:.08s;}.narr-pill.on .nb3{animation-delay:.16s;}.narr-pill.on .nb4{animation-delay:.12s;}
-@keyframes nba{from{height:3px;}to{height:11px;}}
+.kx-narrator{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(20,20,40,.7);backdrop-filter:blur(12px);
+  border:1.5px solid rgba(255,255,255,.18);
+  border-radius:30px;padding:10px 20px;cursor:pointer;
+  transition:all .2s;
+}
+.kx-narrator:hover{background:rgba(40,40,70,.8);}
+.kx-narrator.on{background:rgba(255,107,107,.85);border-color:rgba(255,107,107,.6);}
+
+.kx-nbars{display:flex;gap:2.5px;align-items:flex-end;height:14px;}
+.kx-nb{width:3px;background:#fff;border-radius:3px;transition:height .1s;}
+.kx-nb:nth-child(1),.kx-nb:nth-child(5){height:4px;}
+.kx-nb:nth-child(2),.kx-nb:nth-child(4){height:9px;}
+.kx-nb:nth-child(3){height:13px;}
+.kx-narrator.on .kx-nb{animation:kxNba .35s ease-in-out infinite alternate;}
+.kx-narrator.on .kx-nb:nth-child(2){animation-delay:.07s;}
+.kx-narrator.on .kx-nb:nth-child(3){animation-delay:.14s;}
+.kx-narrator.on .kx-nb:nth-child(4){animation-delay:.09s;}
+@keyframes kxNba{from{height:2px;}to{height:13px;}}
+.kx-narrator-label{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:#fff;font-weight:700;}
+
+.kx-controls{display:flex;align-items:center;gap:8px;}
+.kx-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(20,20,40,.7);backdrop-filter:blur(8px);
+  border:1.5px solid rgba(255,255,255,.2);color:#fff;
+  cursor:pointer;font-size:1rem;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.kx-btn:hover{background:rgba(255,255,255,.2);}
+
+.kx-scene-counter{
+  font-family:'Space Mono',monospace;font-size:.72rem;color:rgba(255,255,255,.7);
+  background:rgba(0,0,0,.35);border-radius:20px;padding:5px 12px;
+  border:1px solid rgba(255,255,255,.15);
+}
+
+/* Auto-advance timer ring */
+.kx-timer-ring{
+  position:absolute;bottom:30px;right:72px;
+  width:32px;height:32px;
+}
+.kx-timer-ring svg{transform:rotate(-90deg);}
+.kx-timer-circle{
+  fill:none;stroke:rgba(255,255,255,.3);stroke-width:3;
+}
+.kx-timer-fill{
+  fill:none;stroke:#fff;stroke-width:3;
+  stroke-linecap:round;
+  stroke-dasharray:82;stroke-dashoffset:82;
+  transition:stroke-dashoffset .1s linear;
+}
+
+/* QR in bottom left (small) */
+.kx-qr-wrap{
+  position:absolute;bottom:80px;left:16px;
+  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.2);border-radius:14px;
+  padding:8px;display:none;
+}
+.kx-qr-wrap.show{display:block;}
+
+/* ── (keep old dots in right panel hidden, use top dots only) ── */
+.scene-dots-r,.info-section,.info-label,.status-row2,.ctrl-row2,.dl-btn,.qr-section{display:none!important;}
+.sdotr{display:none;}
 .dl-btn{width:100%;height:38px;border-radius:10px;background:var(--blue);border:2px solid var(--dark);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;box-shadow:3px 3px 0 var(--dark);}
 .dl-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:5px 5px 0 var(--dark);}
 .dl-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
@@ -387,22 +469,41 @@ header{position:sticky;top:0;z-index:100;background:rgba(238,240,248,.94);backdr
   <div class="hist-stats" id="histStats"></div>
 </div>
 
-<!-- VIDEO MODAL -->
+<!-- KINETIX-STYLE SIDE PANEL MODAL -->
 <div id="videoOverlay" onclick="if(event.target===this)closeModal()">
   <div id="videoModal">
+    <!-- Progress bar at very top -->
+    <div class="vid-prog"><div class="vid-prog-fill" id="vpFill"></div></div>
+    <!-- Top header -->
     <div class="modal-header">
       <div class="modal-topic"><div class="live-dot" id="liveDot"></div><span id="modalTopic">TheoryViz</span></div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="vid-prog"><div class="vid-prog-fill" id="vpFill"></div></div>
     <div class="modal-body">
-      <!-- SLIDE -->
+      <!-- FULL PANEL SLIDE -->
       <div class="slide-col" id="slideCol">
-        <div id="slideContent" class="scene"></div>
+        <!-- Scene progress dots (top) -->
         <div class="scene-dot-row" id="sceneDotRow"></div>
+        <!-- Scene content -->
+        <div id="slideContent" class="scene"></div>
+        <!-- Kinetix bottom bar -->
+        <div class="kx-bottom">
+          <div class="kx-narrator" id="narrPill" onclick="toggleNarrate()">
+            <div class="kx-nbars">
+              <div class="kx-nb"></div><div class="kx-nb"></div><div class="kx-nb"></div>
+              <div class="kx-nb"></div><div class="kx-nb"></div>
+            </div>
+            <span class="kx-narrator-label">AI Narrator</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="kx-scene-counter" id="kxCounter">1 / 5</div>
+            <button class="kx-btn" id="pauseBtn" onclick="togglePause()">⏸</button>
+            <button class="kx-btn" onclick="restartVideo()">↺</button>
+          </div>
+        </div>
       </div>
-      <!-- RIGHT -->
-      <div class="info-col">
+      <!-- Hidden right panel (keep for JS compat) -->
+      <div class="info-col" style="display:none">
         <div class="info-section">
           <div class="info-label">Scenes</div>
           <div class="scene-dots-r" id="sceneDotsR"></div>
@@ -415,19 +516,18 @@ header{position:sticky;top:0;z-index:100;background:rgba(238,240,248,.94);backdr
         </div>
         <div class="info-section">
           <div class="ctrl-row2" style="margin-bottom:8px">
-            <button class="icon-btn2" id="pauseBtn" onclick="togglePause()">⏸</button>
-            <div class="narr-pill" id="narrPill" onclick="toggleNarrate()">
+            <button class="icon-btn2" onclick="restartVideo()">↺</button>
+            <div class="narr-pill" onclick="toggleNarrate()">
               <div class="nbars"><div class="nb nb1"></div><div class="nb nb2"></div><div class="nb nb3"></div><div class="nb nb4"></div><div class="nb nb5"></div></div>
               NARRATE
             </div>
-            <button class="icon-btn2" onclick="restartVideo()">↺</button>
           </div>
-          <button class="dl-btn" id="dlBtn" onclick="downloadVideo()" disabled>⬇ Download Video</button>
+          <button class="dl-btn" id="dlBtn" onclick="downloadVideo()" disabled>⬇ Download</button>
         </div>
         <div class="qr-section">
           <div class="qr-label">📲 Scan to Share!</div>
           <canvas id="qrCanvas" width="140" height="140"></canvas>
-          <div class="qr-sub">Open TheoryViz on<br>any phone or device</div>
+          <div class="qr-sub">Open TheoryViz on<br>any device</div>
           <div class="qr-badge">⚡ FREE TO USE</div>
         </div>
       </div>
@@ -496,13 +596,13 @@ header{position:sticky;top:0;z-index:100;background:rgba(238,240,248,.94);backdr
 </div>
 
 <script>
-// ══ THEMES ══
+// ══ KINETIX THEMES (matching screenshots) ══
 const THEMES=[
-  {bg:'linear-gradient(150deg,#1a1a4e 0%,#0d0d2e 100%)',acc:'#ffd166',rec:'#ffd166'},
-  {bg:'linear-gradient(150deg,#1260d4 0%,#0a3880 100%)',acc:'#60c6ff',rec:'#60c6ff'},
-  {bg:'linear-gradient(150deg,#6d28d9 0%,#3b0f8c 100%)',acc:'#c084fc',rec:'#c084fc'},
-  {bg:'linear-gradient(150deg,#065f46 0%,#022c22 100%)',acc:'#34d399',rec:'#34d399'},
-  {bg:'linear-gradient(150deg,#1e1b4b 0%,#0f0a2e 100%)',acc:'#00f5c8',rec:'#00f5c8'},
+  {bg:'linear-gradient(160deg,#1a56db 0%,#1e3a8a 100%)',acc:'#fbbf24',rec:'#fbbf24'},   // Blue (Image 4)
+  {bg:'linear-gradient(160deg,#7c3aed 0%,#4c1d95 100%)',acc:'#f59e0b',rec:'#f59e0b'},   // Purple (Images 2&3)
+  {bg:'linear-gradient(160deg,#f97316 0%,#c2410c 100%)',acc:'#fde68a',rec:'#fde68a'},   // Orange (Image 1)
+  {bg:'linear-gradient(160deg,#0891b2 0%,#0e7490 100%)',acc:'#a7f3d0',rec:'#a7f3d0'},   // Teal
+  {bg:'linear-gradient(160deg,#6366f1 0%,#3730a3 100%)',acc:'#fca5a5',rec:'#fca5a5'},   // Indigo
 ];
 
 // ══ STATE ══
@@ -572,7 +672,7 @@ function selectSugg(t){inp.value=t;hideSugg();run();}
 function hideSugg(){document.getElementById('suggestions').classList.remove('show');}
 
 // ══ API ══
-async function run(){
+async function run(retryCount=0){
   const q=inp.value.trim();if(!q)return;
   hideSugg();showLoader(q);
   try{
@@ -580,24 +680,33 @@ async function run(){
     const j=await r.json();
     if(!r.ok)throw new Error(j.error||'Error '+r.status);
     hideLoader();buildVideo(q,j.data);saveHistory(q,j.data);
-  }catch(e){hideLoader();showToast('✗ '+e.message);}
+  }catch(e){
+    if(retryCount<1 && (e.message.includes('malformed')||e.message.includes('Incomplete')||e.message.includes('JSON'))){
+      // Silent retry once for parse failures
+      document.getElementById('lSub').textContent='Retrying…';
+      setTimeout(()=>run(retryCount+1),800);
+    } else {
+      hideLoader();showToast('✗ '+e.message);
+    }
+  }
+}
 }
 
 // ══ BUILD ══
 function buildVideo(q,d){
   storyData=d;curScene=0;vidPaused=false;recordedBlob=null;quizAnswered=false;
-  document.getElementById('dlBtn').disabled=true;
-  document.getElementById('modalTopic').textContent=q.length>28?q.slice(0,28)+'…':q;
-  document.getElementById('sLabel').textContent='PLAYING';
-  document.getElementById('recDot').classList.add('on');
+  const dlBtn=document.getElementById('dlBtn');if(dlBtn)dlBtn.disabled=true;
+  document.getElementById('modalTopic').textContent=q.length>22?q.slice(0,22)+'…':q;
+  const sLabel=document.getElementById('sLabel');if(sLabel)sLabel.textContent='PLAYING';
+  const recDot=document.getElementById('recDot');if(recDot)recDot.classList.add('on');
   document.getElementById('liveDot').style.display='block';
 
   // dots
   const dots=['🎬','🔍','🌀','📐','💡'];
   document.getElementById('sceneDotRow').innerHTML=
     Array.from({length:5},(_,i)=>`<div class="sdot${i===0?' active':''}" id="sd${i}" onclick="jumpScene(${i})" title="${dots[i]}"></div>`).join('');
-  document.getElementById('sceneDotsR').innerHTML=
-    Array.from({length:5},(_,i)=>`<div class="sdotr${i===0?' active':''}" id="sdr${i}" onclick="jumpScene(${i})"></div>`).join('');
+  const sdrEl=document.getElementById('sceneDotsR');
+  if(sdrEl)sdrEl.innerHTML=Array.from({length:5},(_,i)=>`<div class="sdotr${i===0?' active':''}" id="sdr${i}"></div>`).join('');
 
   openModal();
   setTimeout(()=>{
@@ -623,7 +732,12 @@ function renderScene(i){
   const col=document.getElementById('slideCol');
   col.style.background=th.bg;
   col.style.setProperty('--reveal-acc',th.acc);
-  document.getElementById('vpFill').style.background=th.acc;
+  // progress fill stays white on Kinetix style
+  const vpFill=document.getElementById('vpFill');
+  if(vpFill)vpFill.style.background='rgba(255,255,255,0.9)';
+  // update scene counter
+  const kxC=document.getElementById('kxCounter');
+  if(kxC)kxC.textContent=`${i+1} / 5`;
   quizAnswered=false;
 
   for(let j=0;j<5;j++){
@@ -666,84 +780,67 @@ function sceneLabel(n,icon,name){
 function buildScene1(d,th){
   const s=d.scene1||{};
   return `
-  <div style="font-size:3.4rem;margin-bottom:6px">${s.emoji||'🎬'}</div>
-  ${sceneLabel(1,'🎬','Hook — Real Life Moment')}
-  <div class="hook-q">${safe(s.question,'What do you notice every day?')}</div>
-  <div class="glass-card" style="margin-bottom:18px"><p>${safe(s.situation,'Something happens around you right now...')}</p></div>
-  <button class="reveal-btn" id="revealBtn" onclick="doReveal()">👆 Tap to Reveal!</button>
-  <div class="reveal-text" id="revealText">🤯 ${safe(s.revealText,'')}</div>`;
+  <div class="sc-title">${safe(s.question,'What do you notice every day?')}</div>
+  <div class="sc-icon">${s.emoji||'🎬'}</div>
+  <div class="glass-card"><p>${safe(s.situation,'Something fascinating happens around you...')}</p></div>`;
 }
 
 function buildScene2(d,th){
   const s=d.scene2||{};
-  const steps=safeArr(s.steps,['Step 1','Step 2','Step 3','Step 4']).slice(0,4);
-  const stepIcons=['1️⃣','2️⃣','3️⃣','4️⃣'];
+  const steps=safeArr(s.steps,['Step 1','Step 2','Step 3']).slice(0,3);
+  const stepIcons=['1️⃣','2️⃣','3️⃣'];
   return `
-  <div style="font-size:2.8rem;margin-bottom:6px">${s.emoji||'🔬'}</div>
-  ${sceneLabel(2,'🔍','Slow-Motion Breakdown')}
-  <div class="sc-title" style="font-size:1.5rem;margin-bottom:14px">${safe(s.title,'Breaking It Down')}</div>
-  <div class="steps-list">
-    ${steps.map((step,i)=>`
-      <div class="step-item">
-        <div class="step-num" style="background:${th.acc}33;color:${th.acc};font-size:.8rem">${stepIcons[i]}</div>
-        <span>${safe(step)}</span>
-      </div>`).join('')}
-  </div>
-  <div class="glass-card" style="margin-top:12px"><p>💡 ${safe(s.insight,'Now you can see how it all connects.')}</p></div>`;
+  <div class="sc-title">${safe(s.title,'Breaking It Down')}</div>
+  <div class="sc-icon">${s.emoji||'🔬'}</div>
+  <div class="glass-card">
+    <div class="steps-list" style="text-align:left">
+      ${steps.map((step,i)=>`
+        <div class="step-item">
+          <div class="step-num" style="background:${th.acc}33;color:${th.acc}">${stepIcons[i]}</div>
+          <span>${safe(step)}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
 }
 
 function buildScene3(d,th){
   const s=d.scene3||{};
   return `
-  <div style="font-size:2.8rem;margin-bottom:6px">${s.emoji||'🌀'}</div>
-  ${sceneLabel(3,'🌀','The Hidden Concept Revealed')}
-  <div class="sc-title" style="font-size:1.4rem;margin-bottom:10px">${safe(s.title,'The Invisible Force Behind It')}</div>
+  <div class="sc-title">${safe(s.title,'The Hidden Concept')}</div>
+  <div class="sc-icon">${s.emoji||'🌀'}</div>
   <div class="concept-name">${safe(s.concept,'Core Concept')}</div>
-  <div class="glass-card" style="margin:12px 0"><p>👁️ ${safe(s.visual,'Imagine you could see it...')}</p></div>
-  <div class="analogy-badge" style="background:${th.acc};color:#1a1a2e">💬 Like: ${safe(s.analogy,'something you already know')}</div>`;
+  <div class="glass-card" style="margin-top:16px"><p>${safe(s.visual,'Imagine you could see it...')} 💬 Like: ${safe(s.analogy,'something you already know')}</p></div>`;
 }
 
 function buildScene4(d,th){
   const s=d.scene4||{};
-  const comp=safeArr(s.comparison,['Case A','Case B']);
   const quiz=s.quiz||{};
   const opts=safeArr(quiz.options,[]);
   const correct=typeof quiz.correct==='number'?quiz.correct:0;
-  // Pick comparison icons based on topic feel
-  const icons=['📦','🏋️'];
   return `
-  <div style="font-size:2.4rem;margin-bottom:4px">${s.emoji||'📐'}</div>
-  ${sceneLabel(4,'📐','The Core Rule — Made Friendly')}
-  <div class="formula-big">${safe(s.rawFormula,'?')}</div>
-  <div class="formula-friendly">"${safe(s.friendlyFormula,'This is how it works in plain words.')}"</div>
-  <div class="compare-row">
-    ${comp.slice(0,2).map((c,i)=>`
-      <div class="compare-box">
-        <div class="box-icon">${icons[i]}</div>
-        <div class="box-label">${safe(c)}</div>
-      </div>`).join('')}
-  </div>
-  ${opts.length?`
-  <div class="quiz-wrap">
-    <div class="quiz-q">🤔 ${safe(quiz.question,'Quick check:')}</div>
-    <div class="quiz-opts">
-      ${opts.map((o,i)=>`<button class="quiz-opt" id="qopt${i}" onclick="answerQuiz(${i},${correct})">${safe(o)}</button>`).join('')}
-    </div>
-  </div>`:''}`;
+  <div class="sc-title">${safe(s.rawFormula,'The Core Rule')}</div>
+  <div class="sc-icon">${s.emoji||'📐'}</div>
+  <div class="glass-card">
+    <p style="font-style:italic;margin-bottom:${opts.length?'12px':'0'}">"${safe(s.friendlyFormula,'This is how it works in plain words.')}"</p>
+    ${opts.length?`
+    <div class="quiz-wrap" style="margin-top:10px">
+      <div class="quiz-q" style="font-size:.85rem;margin-bottom:8px">🤔 ${safe(quiz.question,'Quick check:')}</div>
+      <div class="quiz-opts">
+        ${opts.slice(0,3).map((o,i)=>`<button class="quiz-opt" id="qopt${i}" onclick="answerQuiz(${i},${correct})">${safe(o)}</button>`).join('')}
+      </div>
+    </div>`:''}
+  </div>`;
 }
 
 function buildScene5(d,th){
   const s=d.scene5||{};
   const examples=safeArr(s.examples,[]).slice(0,3);
   return `
-  <div style="font-size:2.8rem;margin-bottom:6px">${s.emoji||'💡'}</div>
-  ${sceneLabel(5,'💡','Mind-Blowing Daily Insight')}
-  <div class="insight-rev">${safe(s.revelation,'This changes how you see everything.')}</div>
-  <div class="examples-row">
-    ${examples.map(ex=>`<div class="ex-chip">✓ ${safe(ex)}</div>`).join('')}
-  </div>
-  <div class="challenge-box" style="background:${th.acc};color:#1a1a2e">
-    🎯 <strong>Your Challenge:</strong> ${safe(s.challenge,'Pay attention today and spot this in real life.')}
+  <div class="sc-title">${safe(s.revelation,'This changes everything!')}</div>
+  <div class="sc-icon">${s.emoji||'💡'}</div>
+  <div class="glass-card">
+    ${examples.length?`<div class="examples-row" style="margin-bottom:12px">${examples.map(ex=>`<div class="ex-chip">✓ ${safe(ex)}</div>`).join('')}</div>`:''}
+    <p style="background:${th.acc};color:#1a1a2e;border-radius:12px;padding:10px 14px;font-size:.9rem">🎯 ${safe(s.challenge,'Spot this in real life today!')}</p>
   </div>`;
 }
 
